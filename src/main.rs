@@ -1,5 +1,4 @@
-// STATUS: Reading and writing plus status update works 
-// NEXT_STEP: Update according to next 2 Claude issues
+// STATUS: Complete! To do list now works with file read/write 
 
 use std::io;
 use std::process;
@@ -40,15 +39,25 @@ fn read_file()-> io::Result<Vec<Task>>{
         Err(e) => return Err(e),
     };
     let mut tasks = Vec::new();
-    for line in contents.lines(){
+    for (i,line) in contents.lines().enumerate(){
         if let Some((done, description)) = line.split_once(',') {
             tasks.push(Task {
                 description: description.to_string(),
                 done: done == "true",
             });
+        } else {
+            eprintln!("File corrupted! Bad data at line {}",i+1);
+            process::exit(1);
         }
     }
     Ok(tasks)
+}
+
+fn save_tasks(tasks: &Vec<Task>) {
+    if let Err(e) = write_file(tasks){
+        eprintln!("error: {e}");
+        process::exit(1);
+    }
 }
 
 
@@ -70,6 +79,7 @@ fn main() {
         match parts.as_slice() {
         ["add"] =>{ println!("Enter new task");
                         tasks.push(Task{description: read_line(), done: false});
+                        save_tasks(&tasks);
                 },
         ["done",index] =>{
                 match index.parse::<usize>(){
@@ -78,6 +88,7 @@ fn main() {
                             Some(task) => {
                                 task.done = true;
                                 println!("Marked task {} as done.",i);
+                                save_tasks(&tasks);
                             }
                             None => println!("No task at index {}.",i),
                         }
@@ -87,27 +98,23 @@ fn main() {
             },
         ["del",index] => {
                 match index.parse::<usize>(){
-                    Ok(i) if i < tasks.len() => {
-                        tasks.remove(i);
-                        println!("Removed task {}",i);
+                    Ok(i) => {
+                        if i < tasks.len() {
+                            tasks.remove(i);
+                            println!("Removed task {}",i);
+                            save_tasks(&tasks);
+                        } else {
+                            println!("No task at index {}",i);
+                        }
                     }
                     _ => println!("'{}' is not a valid number.", index),
                 }
             },
         ["list"] => print_tasks(&tasks),
         ["quit"] => {
-                if let Err(e) = write_file(&tasks){
-                    eprintln!("error: {e}");
-                    process::exit(1);
-                }
                 break;
             },
         _ => println!("Unknown command."),
         }
     }
 }
-
-
-
-
-
