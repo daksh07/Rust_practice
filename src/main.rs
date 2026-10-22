@@ -1,5 +1,5 @@
-// STATUS: Reading and Writing from file works
-// NEXT_STEP: Update the status of the tasks 
+// STATUS: Reading and writing plus status update works 
+// NEXT_STEP: Update according to next 2 Claude issues
 
 use std::io;
 use std::process;
