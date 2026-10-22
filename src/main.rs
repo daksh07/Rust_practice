@@ -1,3 +1,6 @@
+// STATUS: The terminal todo list program working, writing hello world to file working
+// NEXT_STEP: Load the task file on startup, write final tasks to the file on quit
+
 use std::io;
 use std::process;
 use std::fs::File;
