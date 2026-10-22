@@ -1,7 +1,8 @@
-// STATUS: The terminal todo list program working, writing hello world to file working
-// NEXT_STEP: Load the task file on startup, write final tasks to the file on quit
+// STATUS: Tasks being successfully written to csv file
+// NEXT_STEP: Read the csv and save it as a vector 
 
 use std::io;
+use std::io::Read;
 use std::process;
 use std::fs::File;
 use std::io::Write;
@@ -23,15 +24,27 @@ fn read_line()-> String{
     user_input.trim().to_string()
 }
 
-fn write_file()-> std::io::Result<()>{
-    let mut file = File::create("foo.txt")?;
-    file.write_all(b"Hello World!")?;
+fn write_file(tasks: &Vec<Task>)-> std::io::Result<()>{
+    let mut file = File::create("tasks.csv")?;
+    for t in tasks{
+        let line = format!("{},{}\n",t.done,t.description);
+        file.write_all(line.as_bytes())?;
+    }
+    Ok(())
+}
+
+fn read_file()-> std::io::Result<()>{
+    let mut file = File::open("tasks.csv")?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+    println!("{}",contents);
     Ok(())
 }
 
 fn main() {
     let mut tasks =vec![Task{description: ("Go to chemist").to_string(), done: false},Task{description: ("Do coding").to_string(), done: true}];
-    if let Err(e) = write_file() {
+    //let _line = format!("{},{}",tasks[0].done, tasks[0].description);
+    if let Err(e) = read_file() {
         eprintln!("error: {e}");
         process::exit(1);
     }
@@ -69,7 +82,13 @@ fn main() {
                 }
             },
         ["list"] => print_tasks(&tasks),
-        ["quit"] => break,
+        ["quit"] => {
+                if let Err(e) = write_file(&tasks){
+                    eprintln!("error: {e}");
+                    process::exit(1);
+                }
+                break;
+            },
         _ => println!("Unknown command."),
         }
     }
