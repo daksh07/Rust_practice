@@ -1,11 +1,11 @@
-// STATUS: Tasks being successfully written to csv file
-// NEXT_STEP: Read the csv and save it as a vector 
+// STATUS: Reading and Writing from file works
+// NEXT_STEP: Update the status of the tasks 
 
 use std::io;
-use std::io::Read;
 use std::process;
 use std::fs::File;
 use std::io::Write;
+use std::fs;
 
 struct Task {
     description: String,
@@ -33,21 +33,34 @@ fn write_file(tasks: &Vec<Task>)-> std::io::Result<()>{
     Ok(())
 }
 
-fn read_file()-> std::io::Result<()>{
-    let mut file = File::open("tasks.csv")?;
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
-    println!("{}",contents);
-    Ok(())
+fn read_file()-> io::Result<Vec<Task>>{
+    let contents = match fs::read_to_string("tasks.csv"){
+        Ok(c) => c, //Ok gets the vale from the file and stores in c which gets passed to contents
+        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(e) => return Err(e),
+    };
+    let mut tasks = Vec::new();
+    for line in contents.lines(){
+        if let Some((done, description)) = line.split_once(',') {
+            tasks.push(Task {
+                description: description.to_string(),
+                done: done == "true",
+            });
+        }
+    }
+    Ok(tasks)
 }
 
+
 fn main() {
-    let mut tasks =vec![Task{description: ("Go to chemist").to_string(), done: false},Task{description: ("Do coding").to_string(), done: true}];
+    let mut tasks = match read_file(){
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("error reading tasks: {e}");
+            process::exit(1);
+        }
+    };
     //let _line = format!("{},{}",tasks[0].done, tasks[0].description);
-    if let Err(e) = read_file() {
-        eprintln!("error: {e}");
-        process::exit(1);
-    }
     loop{
         println!("Enter a command");
         println!("add | done <index> | del <index> | list | quit");
